@@ -236,43 +236,120 @@
 //	res2 = res1;
 //}
 
-#include <iostream>
-#include <memory>
+//#include <iostream>
+//#include <memory>
+//#include <string>
+//
+//class Person
+//{
+//private:
+//	std::string m_name;
+//	std::weak_ptr<Person> m_partner;
+//public:
+//	Person(const std::string& name) : m_name{ name }
+//	{
+//		std::cout << m_name << " created\n";
+//	}
+//	~Person()
+//	{
+//		std::cout << m_name << " destroyed\n";
+//	}
+//
+//	friend bool partnerUp(std::shared_ptr<Person>& p1, std::shared_ptr<Person>& p2)
+//	{
+//		if (!p1 || !p2)
+//			return false;
+//
+//		p1->m_partner = p2;
+//		p2->m_partner = p1;
+//
+//		std::cout << p2->m_name << " is now parter with " << p2->m_partner.lock()->m_name << '\n';
+//
+//		return true;
+//	}
+//};
+//
+//int main()
+//{
+//	auto lucy{ std::make_shared<Person>("Lucy") };
+//	auto ricky{ std::make_shared<Person>("Ricky") };
+//
+//	partnerUp(lucy, ricky);
+//
+//	return 0;
+//}
 
-class Fraction
+#include <algorithm> // for std::copy()
+#include <cassert>   // for assert()
+#include <initializer_list> // for std::initializer_list
+#include <iostream>
+
+class IntArray
 {
 private:
-	int m_numerator{ 0 };
-	int m_denominator{ 1 };
+	int m_length{};
+	int* m_data{};
 
 public:
-	Fraction(int numerator = 0, int denominator = 1) :
-		m_numerator{ numerator }, m_denominator{ denominator }
+	IntArray() = default;
+
+	IntArray(int length)
+		: m_length{ length }
+		, m_data{ new int[static_cast<std::size_t>(length)] {} }
 	{
+
 	}
 
-	friend std::ostream& operator<<(std::ostream& out, const Fraction& f1)
+	IntArray(std::initializer_list<int> list) // allow IntArray to be initialized via list initialization
+		: IntArray(static_cast<int>(list.size())) // use delegating constructor to set up initial array
 	{
-		out << f1.m_numerator << '/' << f1.m_denominator;
-		return out;
+		// Now initialize our array from the list
+		std::copy(list.begin(), list.end(), m_data);
 	}
+
+	~IntArray()
+	{
+		delete[] m_data;
+	}
+
+	//	IntArray(const IntArray&) = delete; // to avoid shallow copies
+	//	IntArray& operator=(const IntArray& list) = delete; // to avoid shallow copies
+
+	IntArray& operator=( std::initializer_list<int> list)
+	{
+		if (m_length != static_cast<int>(list.size()))
+		{
+			m_length = static_cast<int>(list.size());
+			delete[] m_data;
+			m_data = new int[m_length];
+		}
+		std::copy(list.begin(), list.end(), m_data);
+		return *this;
+	}
+
+	int& operator[](int index)
+	{
+		assert(index >= 0 && index < m_length);
+		return m_data[index];
+	}
+
+	int getLength() const { return m_length; }
 };
-
-void printFraction(const std::make_unique<Fraction*> ptr)
-{
-	if (ptr)
-		std::cout << *ptr << '\n';
-	else
-		std::cout << "No fraction\n";
-}
 
 int main()
 {
-	auto ptr{ std::make_unique<Fraction>(3,5)};
+	IntArray array{ 5, 4, 3, 2, 1 }; // initializer list
+	for (int count{ 0 }; count < array.getLength(); ++count)
+		std::cout << array[count] << ' ';
 
-	printFraction(ptr);
+	std::cout << '\n';
 
-	delete ptr;
+	array = { 1, 3, 5, 7, 9, 11 };
+
+	for (int count{ 0 }; count < array.getLength(); ++count)
+		std::cout << array[count] << ' ';
+
+	std::cout << '\n';
 
 	return 0;
 }
